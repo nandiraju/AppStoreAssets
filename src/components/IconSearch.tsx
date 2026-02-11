@@ -49,23 +49,25 @@ export default function IconSearch({ onSelect, selectedId }: IconSearchProps) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 max-h-[300px] overflow-y-auto p-2">
+      <div className="grid grid-cols-3 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
         {icons.map((icon) => (
           <button
             key={icon.id}
             type="button"
             onClick={() => onSelect(icon)}
-            className={`aspect-square rounded-xl border flex items-center justify-center p-2 transition-all relative group ${
+            className={`aspect-square rounded-2xl border flex items-center justify-center p-2 transition-all relative group bg-white ${
               selectedId === icon.id 
-              ? "border-black bg-zinc-100 shadow-inner" 
-              : "border-zinc-100 hover:border-zinc-300 hover:bg-zinc-50"
+              ? "border-black ring-2 ring-black/5 shadow-md" 
+              : "border-zinc-100 hover:border-zinc-300 hover:shadow-sm"
             }`}
           >
-            <img 
-              src={icon.thumbnail_url} 
-              alt={icon.term} 
-              className="w-full h-full object-contain"
-            />
+            <div className="w-full h-full rounded-xl bg-zinc-50 flex items-center justify-center p-2 group-hover:bg-zinc-100/50 transition-colors">
+                <img 
+                src={icon.thumbnail_url} 
+                alt={icon.term} 
+                className="w-full h-full object-contain"
+                />
+            </div>
             {selectedId === icon.id && (
               <div className="absolute -top-1 -right-1 bg-black text-white rounded-full p-0.5 shadow-sm">
                 <Check className="w-3 h-3" />

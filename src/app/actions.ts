@@ -260,7 +260,7 @@ export async function searchIcons(query: string) {
     });
 
     const request_data = {
-      url: `https://api.thenounproject.com/v2/icon?query=${encodeURIComponent(query)}&limit=24`,
+      url: `https://api.thenounproject.com/v2/icon?query=${encodeURIComponent(query)}&limit=24&thumbnail_size=200`,
       method: 'GET',
     };
 

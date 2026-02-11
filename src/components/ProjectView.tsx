@@ -122,7 +122,7 @@ export default function ProjectView({ project: initialProject }: ProjectViewProp
                         </div>
                     </button>
                 </DialogTrigger>
-                <DialogContent className="rounded-[2.5rem] bg-white border-none p-10 max-w-2xl shadow-2xl">
+                <DialogContent className="rounded-[2.5rem] bg-white border-none p-10 max-w-3xl shadow-2xl">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black">Update Identity</DialogTitle>
                         <DialogDescription className="font-medium">Change your app icon and brand colors. All assets will be rebuilt.</DialogDescription>

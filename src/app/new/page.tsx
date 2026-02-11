@@ -129,6 +129,18 @@ export default function NewProject() {
                     <Textarea name="whatsNew" placeholder="e.g. Added dark mode, improved performance, new sharing features..." className="rounded-2xl min-h-[100px] border-zinc-100 bg-zinc-50/50 focus:bg-white focus:ring-black focus:border-zinc-900 transition-all font-medium py-4 px-4" />
                     <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">For version updates - AI will craft creative release notes</p>
                   </div>
+                  <div className="space-y-2 group/field">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-focus-within/field:text-black transition-colors flex items-center gap-2">
+                      <Sparkles className="w-3 h-3 text-yellow-500" /> Promotional Text (Optional)
+                    </label>
+                    <Input 
+                      name="promotionalText" 
+                      maxLength={170}
+                      placeholder="e.g. Limited time offer, new seasonal features..." 
+                      className="rounded-2xl h-14 border-zinc-100 bg-zinc-50/50 focus:bg-white focus:ring-black focus:border-zinc-900 transition-all font-medium" 
+                    />
+                    <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Highlight current features or offers without a new version</p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2 group/field">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-focus-within/field:text-black transition-colors flex items-center gap-2">

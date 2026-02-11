@@ -147,6 +147,8 @@ export default async function ProjectDetails({ params }: { params: { id: string 
                     <CardContent className="p-10 space-y-8">
                         <CopyField label="App Title" value={metadata.ios_data.title} />
                         <CopyField label="Subtitle" value={metadata.ios_data.subtitle} />
+                        <CopyField label="Promotional Text" value={metadata.ios_data.promotional_text} />
+                        <CopyField label="What's New" value={metadata.ios_data.whats_new} multiline />
                         <CopyField label="Keywords" value={metadata.ios_data.keywords} multiline />
                         <CopyField label="Description" value={metadata.ios_data.description} multiline />
                     </CardContent>
@@ -165,6 +167,7 @@ export default async function ProjectDetails({ params }: { params: { id: string 
                     <CardContent className="p-10 space-y-8">
                         <CopyField label="App Title" value={metadata.android_data.title} />
                         <CopyField label="Short Description" value={metadata.android_data.short_desc} />
+                        <CopyField label="What's New" value={metadata.android_data.whats_new} multiline />
                         <CopyField label="Long Description" value={metadata.android_data.long_desc} multiline />
                     </CardContent>
                 </Card>

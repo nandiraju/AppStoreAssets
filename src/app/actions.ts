@@ -12,6 +12,7 @@ export async function createProject(formData: FormData) {
   const tone = formData.get("tone") as string;
   const brandColor = formData.get("brandColor") as string;
   const whatsNew = formData.get("whatsNew") as string;
+  const promotionalText = formData.get("promotionalText") as string;
   const iconFile = formData.get("icon") as File;
   const iconUrl = formData.get("iconUrl") as string;
   const iconId = formData.get("iconId") as string;
@@ -167,6 +168,7 @@ export async function createProject(formData: FormData) {
       Category: ${category}
       Marketing Tone: ${tone}
       ${whatsNew ? `What's New in This Release: ${whatsNew}` : ''}
+      ${promotionalText ? `Promotional Highlights: ${promotionalText}` : ''}
       
       Your Goal: Create professional, conversion-optimized metadata that stays WITHIN character limits.
       
@@ -190,6 +192,7 @@ export async function createProject(formData: FormData) {
          - List 6-10 key features
          - Natural keyword integration
       8. What's New: ${whatsNew ? '170 chars max. Creative, non-technical summary of: ' + whatsNew : '170 chars max. Generic first release message.'}
+      9. Promotional Text: 170 chars max. A punchy highlight of a current feature or promotion for the App Store.
       
       STRICT CONSTRAINTS:
       - Character Limits are HARD LIMITS. Never exceed them.
@@ -198,7 +201,7 @@ export async function createProject(formData: FormData) {
       - Quality: Professional copywriting, not robotic.
       
       Return ONLY a JSON object with these keys: 
-      "ios_title", "ios_subtitle", "ios_keywords", "ios_description", "android_title", "android_short_desc", "android_long_desc", "whats_new"
+      "ios_title", "ios_subtitle", "ios_keywords", "ios_description", "android_title", "android_short_desc", "android_long_desc", "whats_new", "promotional_text"
     `;
 
     const result = await model.generateContent(prompt);
@@ -212,7 +215,8 @@ export async function createProject(formData: FormData) {
       subtitle: aiResult.ios_subtitle.slice(0, 30), 
       keywords: aiResult.ios_keywords.slice(0, 100), 
       description: aiResult.ios_description.slice(0, 4000),
-      whats_new: aiResult.whats_new?.slice(0, 170) || "Initial release"
+      whats_new: aiResult.whats_new?.slice(0, 170) || "Initial release",
+      promotional_text: aiResult.promotional_text?.slice(0, 170) || ""
     };
     androidData = { 
       title: aiResult.android_title.slice(0, 50), 

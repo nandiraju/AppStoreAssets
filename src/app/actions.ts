@@ -273,3 +273,167 @@ export async function searchIcons(query: string) {
     return [];
   }
 }
+
+export async function regenerateField(projectId: string, fieldKey: string, platform: 'ios' | 'android') {
+  const { data: project } = await supabase.from("projects").select("*").eq("id", projectId).single();
+  const { data: metadata } = await supabase.from("metadata").select("*").eq("project_id", projectId).single();
+  
+  if (!project || !metadata) throw new Error("Project or metadata not found");
+
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const fieldLabels: Record<string, string> = {
+    title: "App Title",
+    subtitle: "Subtitle",
+    description: "Long Description",
+    keywords: "Keywords",
+    short_desc: "Short Description",
+    whats_new: "What's New",
+    promotional_text: "Promotional Text"
+  };
+
+  const limits: Record<string, number> = {
+      title: platform === 'ios' ? 30 : 50,
+      subtitle: 30,
+      short_desc: 80,
+      promotional_text: 170,
+      whats_new: 170,
+      keywords: 100,
+      description: 4000,
+      long_desc: 4000
+  };
+
+  const currentData = platform === 'ios' ? metadata.ios_data : metadata.android_data;
+  const currentValue = currentData[fieldKey] || "";
+
+  const prompt = `
+    You are an ASO specialist. Regenerate the ${fieldLabels[fieldKey] || fieldKey} for the following app on ${platform.toUpperCase()}:
+    
+    App Name: ${project.app_name}
+    Base Description: ${project.description}
+    Category: ${project.category}
+    Tone: ${project.tone}
+    Current Value: ${currentValue}
+    
+    STRICT CONSTRAINTS:
+    - Max characters: ${limits[fieldKey] || 4000}
+    - NO emojis, NO markdown, NO hashtags.
+    - Return ONLY the plain text for the regenerated field. Do not include any JSON or labels.
+  `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const newText = response.text().trim();
+
+  const updatedMetadata = platform === 'ios' 
+    ? { ...metadata.ios_data, [fieldKey]: newText }
+    : { ...metadata.android_data, [fieldKey]: newText };
+
+  const updateKey = platform === 'ios' ? 'ios_data' : 'android_data';
+
+  await supabase
+    .from("metadata")
+    .update({ [updateKey]: updatedMetadata })
+    .eq("project_id", projectId);
+
+  revalidatePath(`/project/${projectId}`);
+  return newText;
+}
+
+export async function updateProjectIcon(formData: FormData) {
+  const projectId = formData.get("projectId") as string;
+  const brandColor = formData.get("brandColor") as string;
+  const iconFile = formData.get("icon") as File;
+  const iconUrl = formData.get("iconUrl") as string;
+  const iconId = formData.get("iconId") as string;
+
+  if (!projectId || (!iconFile && !iconUrl && !iconId)) {
+    throw new Error("Project ID and icon are required");
+  }
+
+  // 1. Process Icon to Buffer
+  let iconBuffer: Buffer;
+  if (iconFile && iconFile.size > 0) {
+    iconBuffer = Buffer.from(await iconFile.arrayBuffer());
+  } else if (iconId) {
+      const pureColor = (brandColor || "#000000").replace("#", "");
+      const KEY = process.env.NOUN_PROJECT_KEY;
+      const SECRET = process.env.NOUN_PROJECT_SECRET;
+      if (!KEY || !SECRET) throw new Error("Noun Project credentials missing");
+      const OAuth = (await import("oauth-1.0a")).default;
+      const crypto = await import("crypto");
+      const oauth = new OAuth({
+          consumer: { key: KEY, secret: SECRET },
+          signature_method: 'HMAC-SHA1',
+          hash_function(base_string, key) {
+              return crypto.createHmac('sha1', key).update(base_string).digest('base64');
+          },
+      });
+      const downloadUrl = `https://api.thenounproject.com/v2/icon/${iconId}/download?color=${pureColor}&filetype=png&size=1024`;
+      const headers = oauth.toHeader(oauth.authorize({ url: downloadUrl, method: 'GET' }));
+      const res = await fetch(downloadUrl, { headers: { ...headers, 'Accept': 'image/png' } });
+      if (res.ok && res.headers.get("content-type")?.includes("image")) {
+          iconBuffer = Buffer.from(await res.arrayBuffer());
+      } else {
+          const fallbackRes = await fetch(iconUrl);
+          iconBuffer = Buffer.from(await fallbackRes.arrayBuffer());
+      }
+  } else {
+    const iconRes = await fetch(iconUrl);
+    if (!iconRes.ok) throw new Error("Failed to fetch selected icon");
+    iconBuffer = Buffer.from(await iconRes.arrayBuffer());
+  }
+
+  // 2. Update project brand color
+  await supabase.from("projects").update({ brand_color: brandColor }).eq("id", projectId);
+
+  // 3. Generate and Update Assets
+  const assets = [
+    { name: "icon.png", size: 1024, type: "icon" },
+    { name: "adaptive-icon.png", size: 1024, type: "adaptive-icon", padding: 200 },
+    { name: "splash.png", width: 1284, height: 2778, type: "splash" },
+    { name: "favicon.png", size: 48, type: "favicon" },
+  ];
+
+  for (const asset of assets) {
+    let processedBuffer: Buffer;
+    if (asset.type === "splash") {
+      processedBuffer = await sharp({
+        create: {
+          width: asset.width!,
+          height: asset.height!,
+          channels: 4,
+          background: brandColor || "#FFFFFF",
+        },
+      })
+      .composite([{ input: await sharp(iconBuffer).resize(400, 400).toBuffer(), gravity: "center" }])
+      .png()
+      .toBuffer();
+    } else if (asset.type === "adaptive-icon") {
+      processedBuffer = await sharp(iconBuffer)
+        .resize(asset.size! - (asset.padding || 0))
+        .extend({
+          top: (asset.padding || 0) / 2,
+          bottom: (asset.padding || 0) / 2,
+          left: (asset.padding || 0) / 2,
+          right: (asset.padding || 0) / 2,
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .png()
+        .toBuffer();
+    } else {
+      processedBuffer = await sharp(iconBuffer).resize(asset.size, asset.size).png().toBuffer();
+    }
+
+    const filePath = `${projectId}/${asset.name}`;
+    await supabase.storage.from("assets").upload(filePath, processedBuffer, { contentType: "image/png", upsert: true });
+    
+    const { data: { publicUrl } } = supabase.storage.from("assets").getPublicUrl(filePath);
+    await supabase.from("assets").update({ file_url: publicUrl }).eq("project_id", projectId).eq("type", asset.type);
+  }
+
+  revalidatePath(`/project/${projectId}`);
+  return { success: true };
+}

@@ -17,7 +17,10 @@ export default function ConfigSnippet({ snippet }: { snippet: any }) {
 
   return (
     <div className="relative group">
-      <pre className="p-8 bg-zinc-900 rounded-3xl text-zinc-300 text-sm overflow-x-auto font-mono leading-relaxed border border-zinc-800">
+      <pre 
+        className="p-8 bg-zinc-900 rounded-3xl text-zinc-300 text-sm overflow-x-auto leading-relaxed border border-zinc-800"
+        style={{ fontFamily: "'Courier New', Courier, monospace" }}
+      >
         {JSON.stringify(snippet, null, 2)}
       </pre>
       <Button 
